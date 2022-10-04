@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 import sys
 import os
-from turtle import color
 from termcolor import colored
 import subprocess
 import math
 
+globals = {}
 
 def print_banner():
     print("+=============================================+")
@@ -83,7 +83,7 @@ def display_users(level: int):
                      "sslh",
                      "_rpc",
                      ]
-    print("Users in /etc/passwd: ")
+    print(colored("Users in /etc/passwd: ", "yellow"))
     primary = []
     secondary = []
     for user in users:
@@ -93,22 +93,93 @@ def display_users(level: int):
             primary.append(colored(user, "green"))
     l1 = primary + secondary
     if len(l1) > 9:
-        for a,b,c in zip(l1[::3],l1[1::3],l1[2::3]):
-            print ('{:<30}{:<30}{:<}'.format(a,b,c))
+        for a, b, c in zip(l1[::3], l1[1::3], l1[2::3]):
+            print('{:<30}{:<30}{:<}'.format(a, b, c))
     else:
         print('\n'.join(l1))
     print()
     return
 
+
 def get_top_processes():
-    tmp = execute_cmd("ps au | sort -nrk 3,3 | head -n 10")
+    tmp = execute_cmd("ps aux | sort -nrk 3,3 | head -n 10")
     lines = tmp.splitlines()
     return lines
 
-def print_top_processes():
-    print("Top 10 processes by CPU usage: ")
-    print('\n'.join(get_top_processes()))
 
+def print_top_processes():
+    print(colored("Top 10 processes by CPU usage: ", "yellow"))
+    print(execute_cmd("ps aux | head -n 1").strip())
+    ps = get_top_processes()
+    ps2 = []
+    for i in ps:
+        ps2.append(i[:120] + " ...")
+    print(colored('\n'.join(ps2), "green"))
+
+
+def get_files_in_root():
+    files = os.listdir("/")
+    return files
+
+
+def print_files_in_root():
+    files = get_files_in_root()
+    default_files = ["run",
+                     "mnt",
+                     "root",
+                     "sbin",
+                     "lib64",
+                     "sys",
+                     "lib",
+                     "lost+found",
+                     "home",
+                     "proc",
+                     "tmp",
+                     "media",
+                     "bin",
+                     "boot",
+                     "srv",
+                     "lib32",
+                     "usr",
+                     "opt",
+                     "var",
+                     "libx32",
+                     "etc",
+                     "initrd.img",
+                     "vmlinuz",
+                     "dev"
+                     ]
+    interesting_files = [".dockerenv"]
+    t1 = []
+    t2 = []
+    for file in files:
+        if file.lower() in interesting_files:
+            t1.append(file)
+        elif file.lower() not in default_files:
+            t2.append(file)
+    result = colored('\t'.join(t1),"red") + colored('\t'.join(t2),"green") 
+    print()
+    print(colored("Uncommon files in root: ","yellow"))
+    print(result)
+    return
+
+def analyze_root_files():
+    global globals
+    files = get_files_in_root()
+    if ".dockerenv" in files:
+        globals["IsDockerEnv"] = True
+    # TODO: Add more checks later
+    return
+
+def print_root_files_analysis():
+    analyze_root_files()
+    global globals
+    print()
+    print(colored("Root file analysis", "yellow"))
+    if "IsDockerEnv" in globals.keys():
+        if globals["IsDockerEnv"] == True:
+            print(colored("Likely a container (Docker)", "green"))
+    return
 def run():
     print_banner()
     args = sys.argv
@@ -122,6 +193,8 @@ def run():
     if enum_level >= 1:
         display_users(enum_level)
     print_top_processes()
+    print_files_in_root()
+    print_root_files_analysis()
     pass
 
 
