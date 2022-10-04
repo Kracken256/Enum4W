@@ -1,0 +1,11 @@
+Add display for /etc/hosts
+
+Add OS info from /etc/os-release
+
+Add display user groups.
+
+List useful binaries.
+
+Show logged in users.
+
+Simple yet awesome.

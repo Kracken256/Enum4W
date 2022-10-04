@@ -15,14 +15,15 @@ def print_banner():
     print("|          " +
           colored("[ By Hacker For Hackers! ]", "yellow") + "         |")
     print(
-        "| " + colored("[ LEGEL: NO WARENTY; USE AT YOUR OWN RISK ]", "red") + " |")
+        "| " + colored("[ LEGAL: NO WARENTY; USE AT YOUR OWN RISK ]", "red") + " |")
     print(
         "| " + colored("[ Star this repo on wesleyjones001/Enum4w ]", "green") + " |")
     print("+=============================================+")
 
 
 def execute_cmd(input: str):
-    return subprocess.check_output(input, shell=True, text=True, stderr=subprocess.STDOUT)
+    output_stream = os.popen(input)
+    return output_stream.read()
 
 
 def get_users():
@@ -34,6 +35,9 @@ def get_users():
 def display_users(level: int):
     users = get_users()
     default_users = ["daemon",
+                     "shutdown",
+                     "operator",
+                     "halt",
                      "bin",
                      "sys",
                      "sync",
@@ -83,6 +87,9 @@ def display_users(level: int):
                      "Debian-snmp",
                      "sslh",
                      "_rpc",
+                     "systemd-oom",
+                     "polkitd",
+                     "systemd-coredump"
                      ]
     print(colored("Users in /etc/passwd: ", "yellow"))
     primary = []
@@ -166,9 +173,10 @@ def print_files_in_root():
                      "etc",
                      "initrd.img",
                      "vmlinuz",
-                     "dev"
+                     "dev",
                      "initrd.img.old",
-                     "vmlinuz.old"
+                     "vmlinuz.old",
+                     "afs"
                      ]
     interesting_files = [".dockerenv"]
     t1 = []
@@ -178,7 +186,7 @@ def print_files_in_root():
             t1.append(file)
         elif file.lower() not in default_files:
             t2.append(file)
-    result = colored('\t'.join(t1), "red") + colored('\t'.join(t2), "green")
+    result = colored('\t\t'.join(t1), "red") + colored('\t\t'.join(t2), "green")
     print()
     print(colored("Uncommon files in root: ", "yellow"))
     print(result)
@@ -212,6 +220,9 @@ def get_user_home_dirs():
     t1 = []
     for dir in dirs:
         t1.append("/home/" + dir)
+
+    if os.access("/root", os.R_OK):
+        t1.append("/root")
     return t1
 
 
@@ -259,6 +270,18 @@ def check_if_ssh_key(filename: str):
     return False
 
 
+def cache_files():
+    global globals
+    print()
+    string = colored(
+        "Caching all readable files in system.\nBe patient this could take awhile..." + "", "white")
+    print(string)
+    globals["SystemFiles"] = execute_cmd(
+        "find / -readable  2> /dev/null").splitlines()
+    print(colored("Done. Won't have to do that again!", "green"))
+    return
+
+
 def check_ssh_keys():
     global globals
     dirs_to_check = []
@@ -271,7 +294,7 @@ def check_ssh_keys():
         for file in os.listdir(dir):
             if check_if_ssh_key(f"{dir}/{file}"):
                 print(
-                    colored(f"Found SSH key in {dir}/{file} Readable!!", "green"))
+                    colored(f"Found SSH Private Key in {dir}/{file} Readable!!", "green"))
                 found_key = True
     if not found_key:
         print("No keys found")
@@ -279,6 +302,7 @@ def check_ssh_keys():
 
 def run():
     print_banner()
+    print()
     args = sys.argv
     enum_level = 1
     if "-c" in args:
@@ -294,6 +318,7 @@ def run():
     print_files_in_root()
     print_root_files_analysis()
     analyze_user_home_dirs()
+    cache_files()
     check_ssh_keys()
     pass
 
